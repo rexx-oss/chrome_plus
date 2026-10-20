@@ -1,6 +1,9 @@
 #include <windows.h>
 #include <psapi.h>
+#include <stdio.h>
+
 #include "detours.h"
+
 #include "config.h"
 #include "green.h"
 #include "hijack.h"
@@ -8,15 +11,21 @@
 #include "portable.h"
 #include "upgradenotification.h"
 #include "utils.h"
+#include "version.h"
 
 using Startup = int (*)();
 static bool should_run_exit_cmd = false;
 Startup ExeMain = nullptr;
 
 void ChromePlus() {
-  MakeGreen();                         // Strips DPAPI and Machine ID
-  IgnorePolicies();                    // Ignores enterprise policies
-  SuppressFalseUpgradeNotification();  // Silences "out of date" notice
+  // Strips DPAPI and machine ID so logins/cookies work on any computer
+  MakeGreen();
+
+  // Suppress enterprise/registry policy checks
+  IgnorePolicies();
+
+  // Suppress Chrome's false "out of date" upgrade notification
+  SuppressFalseUpgradeNotification();
 }
 
 void ChromePlusCommand(LPWSTR param) {
@@ -39,13 +48,18 @@ int Loader() {
 
 void InstallLoader() {
   MODULEINFO mi;
-  GetModuleInformation(GetCurrentProcess(), GetModuleHandle(nullptr), &mi, sizeof(MODULEINFO));
+  GetModuleInformation(GetCurrentProcess(), GetModuleHandle(nullptr), &mi,
+                       sizeof(MODULEINFO));
   ExeMain = reinterpret_cast<Startup>(mi.EntryPoint);
 
   DetourTransactionBegin();
   DetourUpdateThread(GetCurrentThread());
-  DetourAttach(reinterpret_cast<LPVOID*>(&ExeMain), reinterpret_cast<void*>(Loader));
-  DetourTransactionCommit();
+  DetourAttach(reinterpret_cast<LPVOID*>(&ExeMain),
+               reinterpret_cast<void*>(Loader));
+  auto status = DetourTransactionCommit();
+  if (status != NO_ERROR) {
+    DebugLog(L"InstallLoader failed: {}", status);
+  }
 }
 
 __declspec(dllexport) void portable() {}
@@ -54,7 +68,10 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID pv) {
   if (dwReason == DLL_PROCESS_ATTACH) {
     DisableThreadLibraryCalls(hModule);
     hInstance = hModule;
+
+    // Load and forward real Windows system version.dll
     LoadSysDll(hModule);
+
     InstallLoader();
   } else if (dwReason == DLL_PROCESS_DETACH && ::should_run_exit_cmd) {
     LaunchCommands(config.GetLaunchOnExit());
