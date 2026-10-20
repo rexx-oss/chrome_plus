@@ -1,68 +1,50 @@
-# Chrome++ Next
-[![LICENSE](https://img.shields.io/badge/License-GPL--3.0--only-blue.svg?style=for-the-badge&logo=github "LICENSE")](https://github.com/Bush2021/chrome_plus/blob/main/LICENSE) [![LAST COMMIT](https://img.shields.io/github/last-commit/Bush2021/chrome_plus?color=blue&logo=github&style=for-the-badge "LAST COMMIT")](https://github.com/Bush2021/chrome_plus/commits/main) [![STARS](https://img.shields.io/github/stars/Bush2021/chrome_plus?color=brightgreen&logo=github&style=for-the-badge "STARS")](https://github.com/Bush2021/chrome_plus/stargazers) ![SIZES](https://img.shields.io/github/languages/code-size/Bush2021/chrome_plus?color=brightgreen&logo=github&style=for-the-badge "SIZES")
+# Chrome++ Portable
+[![LICENSE](https://img.shields.io/badge/License-GPL--3.0--only-blue.svg?style=for-the-badge&logo=github "LICENSE")](LICENSE) [![LAST COMMIT](https://img.shields.io/github/last-commit/rexx-oss/chrome_plus?color=blue&logo=github&style=for-the-badge "LAST COMMIT")](https://github.com/rexx-oss/chrome_plus/commits/main)
 
-English
-
-Chrome++ Next is a `version.dll` injection project for Google Chrome. It is loaded alongside `chrome.exe` and augments browser behavior at startup with tab, hotkey, portable, command-line, and policy-related features.
+A lightweight `version.dll` proxy injection project for Chromium-based browsers (Google Chrome, Brave, etc.). It strips machine-bound encryption (Windows DPAPI) and redirects user data to provide true, self-contained cross-machine portability.
 
 ## Overview
-- Targets Google Chrome on Windows.
-- Works by placing `version.dll` next to `chrome.exe`.
-- Focuses on practical browser behavior changes instead of UI wrappers or extensions.
-- Prioritizes capabilities that browser extensions cannot implement well, or that external tools do not solve cleanly.
-
-## Support Policy
-- Bug reports are accepted only for the latest stable Google Chrome.
-- Other Chromium-based browsers may work, but they are not supported targets.
-- Reporting requirements are enforced in the GitHub Issues templates.
-
-## Download
-- [Latest releases](https://github.com/Bush2021/chrome_plus/releases)
-
-## Installation
-- Put `version.dll` in the same directory as `chrome.exe`.
-- The recommended installation method is to use the [Chrome offline installer package](https://github.com/Bush2021/chrome_installer), extract it twice, and use the unpacked Chrome program files directly.
-- The project is intended for portable Chrome deployments. If you keep updater components or other Chrome remnants on the system, you are responsible for the resulting environment-specific behavior.
-- If `version.dll` is not loaded correctly, you can try [setdll](https://github.com/Bush2021/setdll/).
+- **True Portability Across PCs:** Bypasses Windows DPAPI encryption so saved website logins, cookies, and sessions remain valid when moving your portable drive to any other computer.
+- **Pure Portability Focus:** Stripped of intrusive UI Automation, mouse gestures, and tab hooks for maximum stability across all Chromium derivatives (including Brave).
+- **Zero Host Traces:** Keeps profile data and cache isolated to designated local folders.
 
 ## Capability Overview
-### Tab and bookmark behavior
-- Double-click to close tabs.
-- Right-click to close tabs, with `Shift` preserving the original menu.
-- Keep the last tab from closing the browser window.
-- Switch tabs with the mouse wheel over the tab strip.
-- Switch tabs with the mouse wheel while holding the right mouse button.
-- Activate a tab by resting the cursor on it.
-- Open omnibox input or bookmarks in a new tab.
-- Control new-tab detection through `new_tab_disable` and `new_tab_disable_name`.
 
-### Hotkeys and input remapping
-- Configure a boss key to hide and restore Chrome windows, and mute or restore audio along with those actions.
-- Configure a translate hotkey.
-- Remap hotkeys to other key combinations or Chrome command IDs through `keymapping`.
+### 1. Cross-Machine Persistence & Portability
+- **DPAPI Encryption Bypass:** Intercepts `CryptProtectData` to store the master cookie key in a machine-independent format, preventing logouts when changing computers.
+- **Hardware ID Masking:** Spoofs volume serial and machine ID queries to prevent hardware-bound profile invalidation.
+- **Directory Redirection:** Customizes `data_dir` and `cache_dir` relative to the executable (`%app%`).
+- **Command Injection:** Appends custom Chromium startup switches via `command_line`.
+- **Process Automation:** Executes scripts or binaries on browser start (`launch_on_startup`) and exit (`launch_on_exit`).
 
-### Portable deployment and startup behavior
-- Override `data_dir` and `cache_dir` for portable use.
-- Append Chromium switches through `command_line`.
-- Run commands or programs with `launch_on_startup` and `launch_on_exit`.
+### 2. Environment & Policy Controls
+- **Ignore Enterprise Policies:** Suppresses host machine domain/enterprise policies with `ignore_policies`.
+- **Silence Update Prompts:** Suppresses false "browser is out of date / relaunch" notices on portable builds with `suppress_false_upgrade_notification`.
+- **Saved Password Access:** Views saved passwords in settings without triggering Windows PIN/password prompts via `show_password`.
+- **Win32k Mitigation Control:** Provides `win32k` fallback support if startup mitigations conflict on specific Windows builds.
 
-### Browser environment controls
-- Ignore enterprise policies with `ignore_policies`.
-- Enable the `win32k` fallback only when Chrome++ itself causes startup crashes.
-- Suppress Chrome's false "out of date" upgrade notification on portable installs with `suppress_false_upgrade_notification`.
-- Additional public options such as `show_password` remain documented in [`src/chrome++.ini`](src/chrome++.ini).
+## Installation
+1. Place compiled `version.dll` and `chrome++.ini` directly in the browser's directory (alongside `chrome.exe` or `brave.exe`).
+2. Configure your desired data paths in `chrome++.ini` (default points to `..\data`).
+3. Launch the browser normally.
+
+> **Note on Existing Profiles:** To ensure logins are portable, log into your accounts *after* launching with `version.dll` so credentials are saved using the machine-independent format.
 
 ## Configuration Reference
-- See [`src/chrome++.ini`](src/chrome++.ini) for the full public configuration surface.
+All settings are managed via [`src/chrome++.ini`](src/chrome++.ini):
+
+```ini
+[general]
+data_dir=%app%\..\data
+cache_dir=%app%\..\data\Cache
+command_line=
+launch_on_startup=
+launch_on_exit=
+show_password=1
+ignore_policies=1
+suppress_false_upgrade_notification=1
+win32k=0
 
 ## License
-- Versions 1.5.4 and earlier are licensed under MIT, with all rights reserved by [Shuax](https://github.com/shuax/).
-- Versions 1.5.5 through 1.5.9 are licensed under MIT, with modifications by contributors in this repository based on Shuax's version.
-- Versions 1.6.0 and later are licensed under [GPL-3.0](LICENSE).
-
-## Thanks
-- All [contributors](https://github.com/Bush2021/chrome_plus/graphs/contributors)
-- Original author [Shuax](https://github.com/shuax/)
-- Revision code [provider](https://forum.ru-board.com/topic.cgi?forum=5&topic=51073&start=620&limit=1&m=1#1) for version 1.5.5
-- [面向大海](https://github.com/mxdh/)
-- [Ho Cheung](https://github.com/gz83/)
+- Distributed under the GPL-3.0 License.
+- Based on the original GreenChrome architecture by Shuax and the Chrome++ Next project by Bush2021.
