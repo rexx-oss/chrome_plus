@@ -1,7 +1,7 @@
 name: Build Portable version.dll
 
 on:
-  workflow_dispatch:  # Allows manual 1-click trigger from GitHub Actions tab
+  workflow_dispatch:
   push:
     branches: [ main, master ]
 
@@ -15,7 +15,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Configure CMake (Native MSVC, No VC-LTL)
+      - name: Configure CMake
         run: |
           cmake -B build -A x64 -DCMAKE_BUILD_TYPE=MinSizeRel -DCHROME_PLUS_USE_VC_LTL=OFF
 
@@ -23,7 +23,7 @@ jobs:
         run: |
           cmake --build build --config MinSizeRel --parallel
 
-      - name: Upload Built version.dll
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: version-x64
