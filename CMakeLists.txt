@@ -83,12 +83,6 @@ if(CHROME_PLUS_EFFECTIVE_BUILD_VERSION)
   endif()
 endif()
 
-option(
-  CHROME_PLUS_USE_VC_LTL
-  "Use VC-LTL for optimized configurations"
-  OFF
-)
-
 add_compile_definitions(
   UNICODE
   _UNICODE
@@ -126,33 +120,14 @@ else()
   target_sources(detours PRIVATE detours/src/disolarm64.cpp)
 endif()
 
-add_library(mini_gzip STATIC
-  mini_gzip/miniz.c
-  mini_gzip/mini_gzip.c
-)
-
-target_include_directories(mini_gzip PUBLIC mini_gzip)
-target_compile_options(mini_gzip PRIVATE
-  $<$<COMPILE_LANG_AND_ID:C,MSVC>:/wd5287>
-  $<$<COMPILE_LANG_AND_ID:C,MSVC>:/wd4267>
-)
-
 add_library(chrome_plus SHARED
-  src/appid.cc
   src/chrome++.cc
   src/chrome++.rc
   src/config.cc
   src/green.cc
   src/hijack.cc
-  src/hotkey.cc
-  src/inputhook.cc
-  src/keymapping.cc
-  src/pakfile.cc
-  src/pakpatch.cc
   src/policies.cc
   src/portable.cc
-  src/tabbookmark.cc
-  src/uia.cc
   src/upgradenotification.cc
   src/utils.cc
 )
@@ -178,11 +153,6 @@ if(CHROME_PLUS_EFFECTIVE_BUILD_VERSION)
   target_compile_definitions(
     chrome_plus PRIVATE ${CHROME_PLUS_VERSION_DEFINITIONS}
   )
-  message(
-    STATUS
-    "Chrome++ build version: "
-    "${CHROME_PLUS_EFFECTIVE_BUILD_VERSION}"
-  )
 endif()
 
 target_link_libraries(chrome_plus PRIVATE
@@ -190,7 +160,6 @@ target_link_libraries(chrome_plus PRIVATE
   propsys
   oleacc
   detours
-  mini_gzip
 )
 
 target_link_options(chrome_plus PRIVATE
@@ -201,36 +170,6 @@ target_link_options(chrome_plus PRIVATE
 set_target_properties(chrome_plus PROPERTIES OUTPUT_NAME version)
 
 set_property(
-  TARGET detours mini_gzip chrome_plus
+  TARGET detours chrome_plus
   PROPERTY INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL TRUE
 )
-
-if(CHROME_PLUS_USE_VC_LTL)
-  include(FetchContent)
-  FetchContent_Declare(
-    vc_ltl
-    URL
-      "https://github.com/Chuyu-Team/VC-LTL5/releases/download/v5.3.1/VC-LTL-Binary.7z"
-    URL_HASH
-      "SHA256=7a18799ed3aa84a225610a5447a56bc534c5c98ccb8dec05caba0e3f633431ad"
-  )
-  FetchContent_MakeAvailable(vc_ltl)
-
-  set(VC_LTL_EnableCMakeInterface ON)
-  if(CHROME_PLUS_ARCH STREQUAL "x86")
-    set(LTLPlatform Win32)
-  else()
-    set(LTLPlatform "${CHROME_PLUS_ARCH}")
-  endif()
-  if(CHROME_PLUS_ARCH STREQUAL "arm64")
-    set(WindowsTargetPlatformMinVersion 10.0.10240.0)
-  else()
-    set(WindowsTargetPlatformMinVersion 6.0.6000.0)
-  endif()
-
-  include("${vc_ltl_SOURCE_DIR}/VC-LTL helper for cmake.cmake")
-  target_link_libraries(
-    chrome_plus
-    PRIVATE "$<$<CONFIG:Release,RelWithDebInfo,MinSizeRel>:VC_LTL>"
-  )
-endif()
