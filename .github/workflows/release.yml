@@ -24,12 +24,12 @@ jobs:
           if [ -n "${{ github.event.inputs.tag_name }}" ]; then
             VERSION="${{ github.event.inputs.tag_name }}"
           else
-            MAJOR=$(grep 'RELEASE_VER_MAIN' src/version.h | awk '{print $3}')
-            MINOR=$(grep 'RELEASE_VER_SUB' src/version.h | awk '{print $3}')
-            FIX=$(grep 'RELEASE_VER_FIX' src/version.h | awk '{print $3}')
+            MAJOR=$(awk '$1=="#define" && $2=="RELEASE_VER_MAIN" {print $3}' src/version.h | tr -d '\r\n')
+            MINOR=$(awk '$1=="#define" && $2=="RELEASE_VER_SUB" {print $3}' src/version.h | tr -d '\r\n')
+            FIX=$(awk '$1=="#define" && $2=="RELEASE_VER_FIX" {print $3}' src/version.h | tr -d '\r\n')
             VERSION="v${MAJOR}.${MINOR}.${FIX}"
           fi
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Release version: $VERSION"
 
       - name: Download Artifact from Latest Build Run
@@ -49,11 +49,11 @@ jobs:
           # Create a flat staging directory
           mkdir -p ./release_pkg
 
-          # Ensure we only copy the raw binary and ini (no inner zips or paths)
+          # Copy only the raw binary and ini
           find ./raw_artifact -type f -name "version.dll" -exec cp {} ./release_pkg/ \;
           find ./raw_artifact -type f -name "chrome++.ini" -exec cp {} ./release_pkg/ \;
 
-          # Create a single clean zip containing only version.dll and chrome++.ini
+          # Create a clean single zip containing version.dll and chrome++.ini
           cd ./release_pkg
           zip -9 "../ChromePlus-${{ env.VERSION }}-x64.zip" version.dll chrome++.ini
           cd ..
