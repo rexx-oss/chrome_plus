@@ -46,14 +46,13 @@ jobs:
 
       - name: Flatten and Package Single Release Zip
         run: |
-          # Create a flat staging directory
           mkdir -p ./release_pkg
 
           # Copy only the raw binary and ini
           find ./raw_artifact -type f -name "version.dll" -exec cp {} ./release_pkg/ \;
           find ./raw_artifact -type f -name "chrome++.ini" -exec cp {} ./release_pkg/ \;
 
-          # Create a clean single zip containing version.dll and chrome++.ini
+          # Create a clean single zip containing both files
           cd ./release_pkg
           zip -9 "../ChromePlus-${{ env.VERSION }}-x64.zip" version.dll chrome++.ini
           cd ..
@@ -63,8 +62,6 @@ jobs:
         with:
           files: |
             ChromePlus-${{ env.VERSION }}-x64.zip
-            release_pkg/version.dll
-            release_pkg/chrome++.ini
           tag_name: ${{ env.VERSION }}
           name: ${{ env.VERSION }}
           generate_release_notes: true
