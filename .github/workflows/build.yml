@@ -1,9 +1,7 @@
 name: Build Portable version.dll
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ main, master ]
+  workflow_dispatch: # Manual trigger only
 
 jobs:
   build:
@@ -23,8 +21,19 @@ jobs:
         run: |
           cmake --build build --config MinSizeRel --parallel
 
+      - name: Stage Raw Files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          $dll = (Get-ChildItem -Path build -Filter "version.dll" -Recurse | Select-Object -First 1).FullName
+          Copy-Item $dll -Destination dist\version.dll
+          Copy-Item src\chrome++.ini -Destination dist\chrome++.ini
+
+      # Uploads only the raw files (no zip created here)
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: version-x64
-          path: build/**/version.dll
+          path: |
+            dist/version.dll
+            dist/chrome++.ini
